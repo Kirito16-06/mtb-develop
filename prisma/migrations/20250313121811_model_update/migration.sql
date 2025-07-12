@@ -1,0 +1,7 @@
+-- CreateEnum
+CREATE TYPE "AuthProvider" AS ENUM ('GOOGLE', 'CREDENTIALS');
+
+-- AlterTable
+ALTER TABLE "User" ADD COLUMN     "authProvider" "AuthProvider" NOT NULL DEFAULT 'CREDENTIALS',
+ALTER COLUMN "jpEarned" SET DEFAULT 0,
+ALTER COLUMN "jpSpent" SET DEFAULT 0;

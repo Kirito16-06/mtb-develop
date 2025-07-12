@@ -1,0 +1,655 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+model User {
+  id                            String               @id @default(uuid())
+  email                         String               @unique
+  password                      String?
+  name                          String
+  createdAt                     DateTime             @default(now())
+  updatedAt                     DateTime             @updatedAt
+  role                          Role
+  image                         String?
+  jpEarned                      Int                  @default(0)
+  jpSpent                       Int                  @default(0)
+  authMethod                    AuthMethod           @default(CREDENTIALS)
+  planEnd                       DateTime?
+  planId                        String?
+  planStart                     DateTime?
+  jpBalance                     Int                  @default(0)
+  jpTransaction                 Int                  @default(0)
+  isBlocked                     Boolean?             @default(false)
+  emailVerificationToken        String?
+  emailVerificationTokenExpires DateTime?
+  isEmailVerified               Boolean              @default(false)
+  achievements                  String?
+  goals                         String?
+  keyOfferings                  String?
+  referralCode                  String?              @unique
+  referredById                  String?
+  socialHandles                 Json?
+  website                       String?
+  membership                    String               @default("FREE")
+  subscriptionEnd               DateTime?
+  subscriptionId                String?              @unique
+  subscriptionStart             DateTime?
+  subscriptionStatus            String?
+  bio                           String?
+  isOnline                      Boolean?             @default(false)
+  alignedActions                AlignedAction[]
+
+  blockedUsers                  BlockedUsers[]
+
+
+  buddyLensRequests             BuddyLensRequest[]   @relation("BuddyLensRequests")
+  BuddyLensReviewer             BuddyLensRequest[]   @relation("BuddyLensReviewer")
+  BuddyLensReview               BuddyLensReview[]
+  cart                          Cart[]
+  invoice                       Invoice[]
+  magicBoxes                    MagicBox[]
+  miracleLog                    MiracleLog[]
+  Notification                  Notification[]
+  orders                        Order[]
+  profileViews                  ProfileView[]
+  progressVault                 ProgressVault[]
+  prosperityDrops               ProsperityDrop[]
+  pushSubscriptions             PushSubscription[]
+  referralsReceived             Referral[]           @relation("Referred")
+  referralsMade                 Referral[]           @relation("Referrer")
+  spotlight                     Spotlight[]
+  streak                        Streak[]
+  streakHistory                 StreakHistory[]
+
+  todos                          Todo[] 
+
+  transaction                   Transaction[]
+  plan                          Plan?                @relation(fields: [planId], references: [id])
+  referredBy                    User?                @relation("UserReferrer", fields: [referredById], references: [id])
+  referrals                     User[]               @relation("UserReferrer")
+
+  userBusinessProfile           UserBusinessProfile[]
+
+  userNotifications             UserNotification[]   @relation("UserNotifications")
+  userStreak                    UserStreak?
+  wishlists                     Wishlist[]
+  buddyLensReviews              BuddyLensRequest[]   @relation("BuddyLensReviews")
+
+  @@index([name])
+}
+
+model Transaction {
+  id         String   @id @default(uuid())
+  userId     String
+  activityId String
+  createdAt  DateTime @default(now())
+  jpAmount   Int
+  activity   Activity @relation(fields: [activityId], references: [id])
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Activity {
+  id              String          @id @default(uuid())
+  activity        ActivityType    @unique
+  jpAmount        Int
+  transactionType TransactionType @default(CREDIT)
+  Transaction     Transaction[]
+}
+
+model Plan {
+  id              String   @id @default(uuid())
+  name            String   @unique
+  jpMultiplier    Float    @default(1.0)
+  discountPercent Float    @default(0.0)
+  durationDays    Int?
+  price           String
+  createdAt       DateTime @default(now())
+  interval        String?
+  isActive        Boolean  @default(true)
+  paypalPlanId    String?  @unique
+  paypalProductId String?
+  updatedAt       DateTime @default(now())
+  users           User[]
+}
+
+model Spotlight {
+  id                  String              @id @default(uuid())
+  userId              String
+  expiresAt           DateTime?
+  appliedAt           DateTime            @default(now())
+  status              SpotlightStatus     @default(APPLIED)
+  defaultDurationDays Int                 @default(1)
+  activatedAt         DateTime?
+  user                User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  activities          SpotlightActivity[]
+
+  @@index([expiresAt])
+}
+
+model Blog {
+  id        String   @id @default(cuid())
+  title     String
+  image     String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  content   String
+  excerpt   String
+  readTime  String
+  category  String
+}
+
+model UserBusinessProfile {
+  id                  String   @id @default(cuid())
+  userId              String   @unique
+  name                String?
+  businessInfo        String?
+  missionStatement    String?
+  goals               String?
+  keyOfferings        String?
+  achievements        String?
+  email               String?  @unique
+  phone               String?
+  website             String?
+  socialHandles       Json?
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+  featuredWorkDesc    String?
+  featuredWorkImage   String?
+  featuredWorkTitle   String?
+  isSpotlightActive   Boolean  @default(false)
+  priorityContactLink String?
+  profileJpRewarded   Boolean  @default(false)
+  isProfileComplete   Boolean  @default(false)
+  user                User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([name, businessInfo, missionStatement, goals, achievements, keyOfferings])
+}
+
+model BlockedUsers {
+  id        String   @id @default(cuid())
+  userId    String   @unique
+  reason    String
+  blockedAt DateTime @default(now())
+  blockedBy String?
+  user      User     @relation(fields: [userId], references: [id])
+}
+
+model ProsperityDrop {
+  id          String               @id @default(uuid())
+  userId      String
+  title       String
+  description String
+  appliedAt   DateTime             @default(now())
+  status      ProsperityDropStatus @default(APPLIED)
+  user        User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([status])
+}
+
+model Faq {
+  id       String @id @default(cuid())
+  question String
+  answer   String
+}
+
+model SpotlightActivity {
+  id          String                @id @default(cuid())
+  type        SpotlightActivityType
+  spotlightId String
+  createdAt   DateTime              @default(now())
+  spotlight   Spotlight             @relation(fields: [spotlightId], references: [id], onDelete: Cascade)
+
+  @@index([spotlightId])
+  @@index([createdAt])
+}
+
+model EmailTemplate {
+  id          String   @id @default(cuid())
+  templateId  String   @unique
+  subject     String
+  htmlContent String
+  description String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model MiracleLog {
+  id               String    @id @default(uuid())
+  content          String
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+  deletedAt        DateTime?
+  userId           String
+  jpPointsAssigned Boolean   @default(false)
+  user             User      @relation(fields: [userId], references: [id])
+}
+
+model ProgressVault {
+  id               String    @id @default(uuid())
+  content          String
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+  deletedAt        DateTime?
+  userId           String
+  jpPointsAssigned Boolean   @default(false)
+  user             User      @relation(fields: [userId], references: [id])
+}
+
+model Item {
+  id            String      @id @default(cuid())
+  name          String
+  basePrice     Float
+  monthlyPrice  Float?
+  yearlyPrice   Float?
+  lifetimePrice Float?
+  imageUrl      String
+  createdAt     DateTime    @default(now())
+  downloadUrl   String?
+  categoryId    String
+  updatedAt     DateTime    @default(now()) @updatedAt
+  cart          Cart[]
+  category      Category    @relation(fields: [categoryId], references: [id])
+  orderItems    OrderItem[]
+  wishlists     Wishlist[]
+
+  @@index([categoryId])
+}
+
+model Category {
+  id        String   @id @default(cuid())
+  name      String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  items     Item[]
+}
+
+model Order {
+  id          String      @id @default(cuid())
+  userId      String
+  totalAmount Float
+  status      String      @default("processing")
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+  user        User        @relation(fields: [userId], references: [id])
+  items       OrderItem[]
+
+  @@index([userId])
+}
+
+model OrderItem {
+  id              String   @id @default(cuid())
+  orderId         String
+  itemId          String
+  quantity        Int
+  priceAtPurchase Float
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  item            Item     @relation(fields: [itemId], references: [id])
+  order           Order    @relation(fields: [orderId], references: [id])
+
+  @@index([orderId])
+  @@index([itemId])
+}
+
+model Wishlist {
+  id        String   @id @default(cuid())
+  userId    String
+  itemId    String
+  createdAt DateTime @default(now())
+  item      Item     @relation(fields: [itemId], references: [id])
+  user      User     @relation(fields: [userId], references: [id])
+
+  @@unique([userId, itemId])
+}
+
+model Cart {
+  id            String   @id @default(cuid())
+  userId        String
+  itemId        String
+  quantity      Int      @default(1)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  wasInWishlist Boolean  @default(false)
+  item          Item     @relation(fields: [itemId], references: [id])
+  user          User     @relation(fields: [userId], references: [id])
+
+  @@unique([userId, itemId])
+}
+
+model Referral {
+  id         String   @id @default(cuid())
+  referrerId String
+  referredId String
+  createdAt  DateTime @default(now())
+  referred   User     @relation("Referred", fields: [referredId], references: [id])
+  referrer   User     @relation("Referrer", fields: [referrerId], references: [id])
+
+  @@unique([referrerId, referredId])
+}
+
+model MagicBox {
+  id             String    @id @default(uuid())
+  userId         String
+  isOpened       Boolean   @default(false)
+  jpAmount       Int?
+  openedAt       DateTime?
+  createdAt      DateTime  @default(now())
+  nextBoxAt      DateTime
+  randomUserIds  String[]
+  selectedUserId String?
+  isRedeemed     Boolean   @default(false)
+  redeemedAt     DateTime?
+  user           User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([nextBoxAt])
+}
+
+model MagicBoxSettings {
+  id          String   @id @default(uuid())
+  minJpAmount Int      @default(100)
+  maxJpAmount Int      @default(500)
+  updatedAt   DateTime @updatedAt
+}
+
+model BuddyLensRequest {
+  id             String                 @id @default(uuid())
+  requesterId    String
+  socialMediaUrl String
+  jpCost         Int
+  status         BuddyLensRequestStatus @default(OPEN)
+  createdAt      DateTime               @default(now())
+  completedAt    DateTime?
+  tier           String                 @default("5min")
+  domain         String
+  isDeleted      Boolean                @default(false)
+  updatedAt      DateTime               @updatedAt
+  questions      String[]
+  reviewerId     String?
+  requester      User                   @relation("BuddyLensRequests", fields: [requesterId], references: [id])
+  reviewer       User?                  @relation("BuddyLensReviewer", fields: [reviewerId], references: [id])
+  review         BuddyLensReview[]
+  User           User[]                 @relation("BuddyLensReviews")
+
+  @@index([requesterId])
+  @@index([status])
+}
+
+model BuddyLensReview {
+  id          String                @id @default(uuid())
+  requestId   String
+  rating      Int?
+  feedback    String?
+  submittedAt DateTime?
+  createdAt   DateTime              @default(now())
+  updatedAt   DateTime              @updatedAt
+  reviewText  String
+  reviewerId  String
+  answers     String[]
+  status      BuddyLensReviewStatus @default(PENDING)
+  request     BuddyLensRequest      @relation(fields: [requestId], references: [id])
+  reviewer    User                  @relation(fields: [reviewerId], references: [id])
+
+  @@unique([requestId, reviewerId])
+  @@index([requestId])
+  @@index([reviewerId])
+  @@index([status])
+}
+
+model UserNotification {
+  id        String   @id @default(uuid())
+  userId    String
+  message   String
+  read      Boolean  @default(false)
+  createdAt DateTime @default(now())
+  link      String?
+  user      User     @relation("UserNotifications", fields: [userId], references: [id])
+}
+
+model Invoice {
+  id                 String   @id @default(uuid())
+  userSubscriptionId String
+  amount             Float
+  saleId             String   @unique
+  createdAt          DateTime @default(now())
+  user               User     @relation(fields: [userSubscriptionId], references: [subscriptionId])
+}
+
+model ProfileView {
+  id       String   @id @default(uuid())
+  userId   String
+  viewedAt DateTime @default(now())
+  viewerId String?
+  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([viewedAt])
+}
+
+model Notification {
+  id        String           @id @default(uuid())
+  userId    String
+  type      NotificationType
+  title     String
+  message   String
+  isRead    Boolean          @default(false)
+  createdAt DateTime         @default(now())
+  metadata  Json?
+  user      User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([createdAt])
+}
+
+model PushSubscription {
+  id        String   @id @default(uuid())
+  userId    String
+  endpoint  String   @unique
+  p256dh    String
+  auth      String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+model AlignedAction {
+  id           String   @id @default(uuid())
+  userId       String
+  mood         String
+  completed    Boolean  @default(false)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  category     String
+  reminderSent Boolean  @default(false)
+  selectedTask String
+  tasks        String[]
+  timeFrom     DateTime
+  timeTo       DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt])
+  @@index([timeFrom])
+}
+
+model Streak {
+  id                     String     @id @default(cuid())
+  userId                 String
+  type                   StreakType
+  miracle_log_count      Int        @default(0)
+  progress_vault_count   Int        @default(0)
+  miracle_log_last_at    DateTime?
+  progress_vault_last_at DateTime?
+  createdAt              DateTime   @default(now())
+  updatedAt              DateTime   @updatedAt
+  user                   User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, type])
+}
+
+model StreakHistory {
+  id        String     @id @default(cuid())
+  userId    String
+  type      StreakType
+  count     Int
+  date      DateTime   @default(now())
+  createdAt DateTime   @default(now())
+  user      User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, type])
+}
+
+model UserStreak {
+  id            String   @id @default(uuid())
+  userId        String   @unique
+  currentStreak Int      @default(0)
+  lastActiveDay DateTime
+  loginCount    Int      @default(0)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  user          User     @relation(fields: [userId], references: [id])
+}
+
+model Todo {
+  id             String     @id @default(cuid())
+  title          String
+  description    String?
+  dueDate        DateTime?
+  frequency      Frequency?
+  isCompleted    Boolean    @default(false)
+  createdAt      DateTime   @default(now())
+  updatedAt      DateTime   @updatedAt
+  userId         String
+  taskAddJP      Boolean    @default(false)
+  taskCompleteJP Boolean    @default(false)
+  user           User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+enum Role {
+  ADMIN
+  USER
+}
+
+enum AuthMethod {
+  GOOGLE
+  CREDENTIALS
+}
+
+enum ActivityType {
+  SIGNUP
+  DAILY_LOGIN
+  QUIZ_CORRECT
+  ADD_LOG
+  SPOTLIGHT
+  PROSPERITY_DROP
+  BUSINESSPROFILE_COMPLETE
+  MIRACLE_LOG
+  PROGRESS_VAULT
+  REFER_BY
+  REFER_TO
+  MAGIC_BOX_REWARD
+  MAGIC_BOX_SHARED_REWARD
+  GENERAL_FEEDBACK
+  FEATURE_REQUEST
+  BUG_REPORT
+  ALIGNED_ACTION
+  STREAK_7_DAYS
+  STREAK_21_DAYS
+  STREAK_45_DAYS
+  STREAK_90_DAYS
+  MIRACLE_STREAK_REWARD_7_DAYS
+  MIRACLE_STREAK_REWARD_21_DAYS
+  MIRACLE_STREAK_REWARD_45_DAYS
+  MIRACLE_STREAK_REWARD_90_DAYS
+  PROGRESS_VAULT_STREAK_REWARD_7_DAYS
+  PROGRESS_VAULT_STREAK_REWARD_21_DAYS
+  PROGRESS_VAULT_STREAK_REWARD_45_DAYS
+  PROGRESS_VAULT_STREAK_REWARD_90_DAYS
+  BUDDY_LENS_REQUEST
+  BUDDY_LENS_REVIEW
+  DAILY_BLOOM_CREATION_REWARD
+  DAILY_BLOOM_COMPLETION_REWARD
+}
+
+enum TransactionType {
+  DEBIT
+  CREDIT
+}
+
+enum SpotlightStatus {
+  APPLIED
+  IN_REVIEW
+  APPROVED
+  DISAPPROVED
+  EXPIRED
+  ACTIVE
+}
+
+enum ProsperityDropStatus {
+  APPLIED
+  IN_REVIEW
+  APPROVED
+  DISAPPROVED
+}
+
+enum SpotlightActivityType {
+  VIEW
+  CONNECT
+}
+
+enum BuddyLensRequestStatus {
+  OPEN
+  CLAIMED
+  COMPLETED
+  CANCELLED
+  PENDING
+}
+
+enum BuddyLensReviewStatus {
+  DRAFT
+  SUBMITTED
+  REPORTED
+  PENDING
+  APPROVED
+  DISAPPROVED
+}
+
+enum NotificationType {
+  JP_EARNED
+  PROSPERITY_APPLIED
+  SPOTLIGHT_APPROVED
+  SPOTLIGHT_ACTIVE
+  MAGIC_BOX_SHARED
+  SPOTLIGHT_APPLIED
+  PROSPERITY_APPROVED
+  BUDDY_LENS_CLAIMED
+  BUDDY_LENS_APPROVED
+  BUDDY_LENS_REJECTED
+  BUDDY_LENS_REVIEWED
+  BUDDY_LENS_COMPLETED
+}
+
+enum BreathWorkType {
+  OM
+  VOOO
+}
+
+enum StreakType {
+  MIRACLE_LOG
+  PROGRESS_VAULT
+}
+
+enum Frequency {
+  Daily
+  Weekly
+  Monthly
+}

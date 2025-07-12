@@ -1,0 +1,2 @@
+-- AlterEnum
+ALTER TYPE "ActivityType" ADD VALUE 'MAGIC_BOX_REWARD';
