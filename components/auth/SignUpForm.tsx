@@ -16,7 +16,7 @@ import { toast } from "sonner";
 import { getAxiosErrorMessage } from "@/utils/ax";
 import { SignupFormType, signupSchema } from "@/schema/zodSchema";
 import GoogleIcon from "../icons/GoogleIcon";
-import { signIn } from "next-auth/react";
+import { signIn, getSession } from "next-auth/react";
 import { Eye, EyeOff } from "lucide-react";
 import Link from "next/link";
 
@@ -89,17 +89,35 @@ export default function SignUpForm() {
   
   const handleGoogleLogin = async () => {
     try {
-      // Get referral code from URL or cookies
-      // const referralCode = searchParams.get('ref');
-      
       const result = await signIn("google", {
         redirect: false,
         callbackUrl: "/dashboard",
-        // state: "gggggggggg",
       });
       
       if (result?.ok) {
-        console.log("herer in okay");
+        // Process referral after successful Google sign-in
+        const referralCode = Cookies.get('referralCode');
+        if (referralCode) {
+          try {
+            // Get the current session to get user ID
+            const session = await getSession();
+            if (session?.user?.id) {
+              const referralRes = await axios.post("/api/refer-friend/process", {
+                referralCode,
+                userId: session.user.id,
+              });
+
+              if (referralRes.status >= 200 && referralRes.status < 300) {
+                toast.success("Referral processed successfully!");
+                Cookies.remove('referralCode'); // remove after processing
+              }
+            }
+          } catch (refErr) {
+            console.error("Referral processing error:", refErr);
+            toast.error(getAxiosErrorMessage(refErr, "Referral failed"));
+          }
+        }
+        
         router.push("/dashboard");
         toast.success("Signed in successfully");
         return;
